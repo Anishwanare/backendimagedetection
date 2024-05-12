@@ -23,7 +23,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "https://imagedetectionapplication-d3fnwuunc-anishwanares-projects.vercel.app",
+      "https://imageannotationapplication.vercel.app",
     ],
     methods: "GET,POST,PUT,PATCH,HEAD,DELETE",
     credentials: true,
