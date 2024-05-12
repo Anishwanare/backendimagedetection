@@ -1,54 +1,37 @@
 const express = require("express");
 const multer = require("multer");
-const { GridFsStorage } = require("multer-gridfs-storage");
-const mongoose = require("mongoose");
 const Image = require("../models/ImageModel.js");
 const router = express.Router();
 //for csv file
 const csv = require("csv-writer").createObjectCsvStringifier;
 
-// MongoDB connection
-const mongoURI =
-  "mongodb+srv://dnyanankur:11111@cluster0.5slqu7t.mongodb.net/dnyanankur";
-const conn = mongoose.createConnection(process.env.MONGOOSE_URL || mongoURI);
-
-
 
 //from multer documentation
-const storage = new GridFsStorage({
-  url: mongoURI,
-  file: (req, file) => {
-    return {
-      filename: file.originalname
-    };
-  }
+const storage = multer.diskStorage({
+  //where we have to upload image his is syntax
+  //cb(anyError,"filename") cb is call back function which have attribute error, filename
+  destination: function (req, file, cb) {
+    cb(null, "../client/src/images");
+    // cb(null, "uploads/"); this will save image into upload
+  },
+  //creating a unique file name for each imagae
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now(); // this provide ans unique file name
+    cb(null, uniqueSuffix + file.originalname);
+  },
 });
-const upload = multer({ storage });
+const upload = multer({ storage: storage });
+
 
 //endpoint to upload image
 router.post("/uploadimage", upload.single("image"), async (req, res) => {
+  const imageName = req.file.filename;
+  const { annotation } = req.body;
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No image uploaded" });
-    }
-
-    const imageName = req.file.filename;
-    const { annotation } = req.body;
-
-    // Create a new Image document
-    const newImage = new Image({
-      image: imageName,
-      annotations: annotation,
-      status: "pending", // Assuming initial status is "pending"
-    });
-
-    // Save the Image document to the database
-    await newImage.save();
-
-    res.json({ message: "Image uploaded successfully", status: true });
+    await Image.create({ image: imageName, annotations: annotation });
+    res.json({ message: "Image Uploaded Successfully", status: true });
   } catch (error) {
-    console.error("Error uploading image:", error);
-    res.status(500).json({ error: "Failed to upload image" });
+    res.json({ status: error });
   }
 });
 
